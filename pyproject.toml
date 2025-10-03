@@ -17,6 +17,7 @@ notebooks = [
     "numpy",
     "optuna",
     "optunahub",
+    "optuna-dashboard",
     "pandas",
     "polars",
     "scikit-learn",

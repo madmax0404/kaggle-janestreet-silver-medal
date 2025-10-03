@@ -5,9 +5,18 @@ https://www.kaggle.com/competitions/jane-street-real-time-market-data-forecastin
 
 ---
 
+## TL;DR
+
+- Silver medal (top 4.3%) on the Jane Street Real-Time Market Data Forecasting competition with a final private score of **0.007694**.
+- Explored sliding-window LightGBM and online-learning pipelines, but the winning submission relies on a static LightGBM ensemble for stability.
+- Competition submission blends the static LightGBM ensemble with a teammate-built neural module (`notebooks/submission/submission.ipynb`).
+- Reproducible pipeline powered by Polars, Optuna, and `pip install -e .[dev,notebooks]`, plus a synthetic evaluation harness for local stress tests.
+
+---
+
 ## Project Overview
 
-This repository chronicles ongoing work on Jane Street’s real-time market forecasting challenge (see `competition-overview.md`). The objective is to predict `responder_6`—a future, weight-adjusted return—using 79 anonymized market features delivered every market minute. Core difficulties include fat-tailed returns, non-stationary behaviour, and sudden regime shifts. My workflow focuses on LightGBM-driven feature engineering and sliding-window training, while my teammate contributed neural-network modules that ultimately blend with the boosted trees inside the submission notebook. Sliding-window LightGBM models currently peak around **0.058 weighted R²** on fresh validation windows; typical runs average **0.05 ± 0.01**, and early EDA probes topped out near 0.11 on tiny hold-outs (see `notebooks/eda/EDA_20241224_03.ipynb`).
+This repository chronicles ongoing work on Jane Street’s real-time market forecasting challenge (see `competition-overview.md`). We ultimately earned a silver medal (top 4.3%) with a final private score of **0.007694** by submitting the static LightGBM ensemble captured in `notebooks/submission/submission.ipynb`. The objective remains to predict `responder_6`—a future, weight-adjusted return—using 79 anonymized market features delivered every market minute. Core difficulties include fat-tailed returns, non-stationary behaviour, and sudden regime shifts. While much of the experimentation centres on LightGBM-driven feature engineering and sliding-window training, the static ensemble proved the most reliable in live evaluation, and it blends with a teammate-built neural module inside the submission notebook. Sliding-window LightGBM models still peak around **0.058 weighted R²** on fresh validation windows; typical runs average **0.05 ± 0.01**, and early EDA probes topped out near 0.11 on tiny hold-outs (see `notebooks/eda/EDA_20241224_03.ipynb`).
 
 ---
 
@@ -15,7 +24,7 @@ This repository chronicles ongoing work on Jane Street’s real-time market fore
 
 - `competition-overview.md`, `dataset-description.md`, `evaluation.xml` capture official background, schema, and scoring formula.
 - `notebooks/eda/` – Market diagnostics, correlation heatmaps, distribution studies. See `EDA_20241228_03.ipynb` for responder behaviour and `EDA_20241224_03.ipynb` for high-scoring feature probes.
-- `notebooks/experiments/` – Chronological modeling experiments (`YYYYMMDD_##_slug.ipynb`). LightGBM sliding windows dominate, alongside XGBoost, CatBoost, and early Torch trials.
+- `notebooks/experiments/` – Chronological modeling experiments (`YYYYMMDD_##_slug.ipynb`). LightGBM sliding windows dominate, alongside XGBoost and early Torch trials.
 - `notebooks/submission/submission.ipynb` – Full submission notebook used by our team: LightGBM modules (authored here) plus teammate-built neural components.
 - `images/` – Exported figures referenced in notebooks and this README (heatmaps, tuning traces, SHAP plots, baseline comparisons).
 - `main.py` – Simple CLI entry point mirrored by the regression tests.
@@ -58,6 +67,7 @@ Early notebooks profile feature stability, feature–target relationships, and c
 - **Temporal drift** – `images/feature_00_pattern_over_time.png` exhibits oscillating means and volatility regimes across `date_id`, while `images/feature_19_pattern_over_time.png` stays comparatively stationary with occasional shocks—input for validation window design.
 - **Feature vs. target alignment** – Scatterplots (`images/scatterplot1.png`, `images/scatterplot2.png`) indicate that `responder_6` remains clipped to ±5 and that predictive signals appear as subtle density shifts rather than clear-cut clusters, reinforcing the need for robust modeling.
 
+![images/feature_00_histogram.png](images/feature_00_histogram.png)
 ![images/feature_09_histogram.png](images/feature_09_histogram.png)
 ![images/feature_00_pattern_over_time.png](images/feature_00_pattern_over_time.png)
 ![images/feature_19_pattern_over_time.png](images/feature_19_pattern_over_time.png)
@@ -86,7 +96,7 @@ Additional figure assets—`images/feature_00_histogram.png`, `images/feature_09
 ## Modeling Strategy
 
 1. **LightGBM (GPU)** – Primary learner via `LGBMRegressor` with sliding windows (developed here). Each Optuna trial samples a random `date_id`, draws training/validation/test windows (80–300 training days, 1–10 validation days), and evaluates weighted R².
-2. **XGBoost & CatBoost** – Serve as benchmarks; CatBoost handles categorical tag experiments, while XGBoost provides an alternative boosting formulation.
+2. **XGBoost** – Serve as benchmarks; XGBoost provides an alternative boosting formulation.
 3. **PyTorch prototypes & submission neural module** – Teammate-authored feed-forward and sequence models, later blended with the LightGBM signal in the submission notebook.
 
 Hyperparameter tuning uses Optuna and [OptunaHub](https://optuna.github.io/optunahub/) for remote tracking. Search spaces span learning rate, depth, regularization, and leaf counts. Typical best values fall around `learning_rate≈0.045`, `num_leaves≈2000`, `lambda_l2≈800`.
@@ -135,10 +145,10 @@ Only rows with `is_scored == True` participate in the sums. Several notebooks ma
 
 | Model & Setup | Validation Window Strategy | Best Weighted R² | Notes |
 | --- | --- | --- | --- |
+| LightGBM static ensemble (competition submission) | Fixed training span, static features | **0.007694** (private LB) | Silver medal solution in `notebooks/submission/submission.ipynb`; blends static LightGBM with teammate neural module. |
 | LightGBM (GPU) + Optuna | 80–300 day training, 1–10 day validation (10 random draws) | **0.0578** | `20250107_01_sliding_window_test.ipynb`; λ₂≈960, sampling 500k rows per draw. |
-| LightGBM exploratory EDA | Ad-hoc hold-out (`EDA_20241224_03.ipynb`) | 0.1105 | Single split on early data; strong overfit warning but guides feature pruning. |
+| LightGBM exploratory EDA | Ad-hoc hold-out (`EDA_20241224_03.ipynb`) | 0.1105 | KFold(shuffle=True); strong overfit warning but guides feature pruning. |
 | XGBoost baseline | Static train/validation split | ~0.030 | Provides comparison to ensure LightGBM gains hold. |
-| CatBoost tags experiment | Per-symbol categorical treatment | ~0.025 | Useful for benchmarking but slower on GPU. |
 | Torch prototype | Dense feed-forward | <0.01 | Requires further feature selection and regularization.
 
 ---
@@ -165,7 +175,7 @@ All notebooks live under `notebooks/` and are grouped by purpose:
    ```bash
    python -m venv .venv
    source .venv/bin/activate
-   uv pip install -e .[dev,notebooks]
+   pip install -e .[dev,notebooks]
    ```
 2. **Download data** from Kaggle and unpack the Parquet files, updating the notebook `path` variable to match your location.
 3. **Launch JupyterLab** and open notebooks chronologically; begin with EDA to regenerate figures, then experiment notebooks for modeling runs.
@@ -177,12 +187,20 @@ All notebooks live under `notebooks/` and are grouped by purpose:
 
 ---
 
+## Key Learnings & Challenges
+
+- Live trading constraints reward stability: sliding-window models reached **0.058 weighted R²** in validation, but a well-regularised static LightGBM ensemble proved more reliable for the live API.
+- Rich tooling mattered: Polars kept 4.5M-row feature engineering manageable, and Optuna/OptunaHub let us iterate quickly across 70+ experiments.
+- Blending requires tight collaboration: the final submission stitches my LightGBM models with a teammate’s neural module, so artifact management and interface design were as important as raw model accuracy.
+
+---
+
 ## Next Steps
 
 - Integrate richer temporal encoders (Transformer-style sequence models) to exploit minute-level structure.
 - Formalise online learning notebooks into a reusable pipeline under `src/`.
 - Automate feature importance drift monitoring based on SHAP outputs to detect leakage early.
-- Explore ensembling (LightGBM + XGBoost + CatBoost) and stacking with linear meta-learners for leaderboard submissions.
+- Explore ensembling (LightGBM + XGBoost) and stacking with linear meta-learners for leaderboard submissions.
 - Productionise environment setup with Makefiles or UV workspaces for repeatable training runs.
 
 ---
@@ -190,7 +208,7 @@ All notebooks live under `notebooks/` and are grouped by purpose:
 ## Acknowledgements
 
 - **Jane Street & Kaggle** for releasing the competition data, infrastructure, and evaluation API.
-- **Open-source contributors** behind LightGBM, XGBoost, CatBoost, Optuna, Polars, PyTorch, and the broader Python ecosystem.
+- **Open-source contributors** behind LightGBM, XGBoost, Optuna, Polars, PyTorch, and the broader Python ecosystem.
 - **Community notebooks** that inspired experiments, especially baseline sliding-window ideas and API harness patterns referenced in this repo.
 
 ---
