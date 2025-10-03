@@ -1,0 +1,29 @@
+[project]
+name = "janestreet2"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4",
+]
+notebooks = [
+    "jupyterlab",
+    "lightgbm",
+    "matplotlib",
+    "numpy",
+    "optuna",
+    "optunahub",
+    "pandas",
+    "polars",
+    "scikit-learn",
+    "scipy",
+    "seaborn",
+    "shap",
+    "torch",
+    "tqdm",
+    "xgboost",
+]

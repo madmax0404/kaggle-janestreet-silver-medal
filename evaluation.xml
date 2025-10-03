@@ -1,0 +1,66 @@
+<math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
+  <mrow class="MJX-TeXAtom-ORD">
+    <msup>
+      <mi mathvariant="normal">R</mi>
+      <mn>2</mn>
+    </msup>
+  </mrow>
+  <mo>=</mo>
+  <mn>1</mn>
+  <mo>&#x2212;<!-- − --></mo>
+  <mfrac>
+    <mrow>
+      <mo>&#x2211;<!-- ∑ --></mo>
+      <msub>
+        <mi>w</mi>
+        <mrow class="MJX-TeXAtom-ORD">
+          <mi>i</mi>
+        </mrow>
+      </msub>
+      <mo stretchy="false">(</mo>
+      <msub>
+        <mi>y</mi>
+        <mrow class="MJX-TeXAtom-ORD">
+          <mi>i</mi>
+        </mrow>
+      </msub>
+      <mo>&#x2212;<!-- − --></mo>
+      <mrow class="MJX-TeXAtom-ORD">
+        <mover>
+          <msub>
+            <mi>y</mi>
+            <mrow class="MJX-TeXAtom-ORD">
+              <mi>i</mi>
+            </mrow>
+          </msub>
+          <mo stretchy="false">&#x005E;<!-- ^ --></mo>
+        </mover>
+      </mrow>
+      <msup>
+        <mo stretchy="false">)</mo>
+        <mrow class="MJX-TeXAtom-ORD">
+          <mn>2</mn>
+        </mrow>
+      </msup>
+    </mrow>
+    <mrow>
+      <mo>&#x2211;<!-- ∑ --></mo>
+      <msub>
+        <mi>w</mi>
+        <mrow class="MJX-TeXAtom-ORD">
+          <mi>i</mi>
+        </mrow>
+      </msub>
+      <msubsup>
+        <mi>y</mi>
+        <mrow class="MJX-TeXAtom-ORD">
+          <mi>i</mi>
+        </mrow>
+        <mrow class="MJX-TeXAtom-ORD">
+          <mn>2</mn>
+        </mrow>
+      </msubsup>
+    </mrow>
+  </mfrac>
+  <mo>,</mo>
+</math>
